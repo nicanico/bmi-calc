@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +27,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.senai.sp.jandira.bmicalc.calcs.bmiCalculate
+import br.senai.sp.jandira.bmicalc.calcs.getBmiClassification
+import br.senai.sp.jandira.bmicalc.calcs.getBmiClassificationColor
 import br.senai.sp.jandira.bmicalc.model.Client
 import br.senai.sp.jandira.bmicalc.model.Product
 import br.senai.sp.jandira.bmicalc.ui.theme.BMICalcTheme
@@ -58,6 +62,10 @@ fun CalculatorScreen() {
     var bmiState = rememberSaveable {
         mutableStateOf("")
     }
+    var bmiClassificationState = rememberSaveable {
+        mutableStateOf("")
+    }
+    var context = LocalContext.current
 
     Surface(
         modifier = Modifier
@@ -128,16 +136,21 @@ fun CalculatorScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Spacer(modifier = Modifier.height(32.dp))
+
+
+
                 Button(
                     onClick = {
-                        var bmi = 0.00
-                        var w = weightState.value.toDouble()
-                        var h = heightState.value.toDouble()
-                        bmi = w / (h / 100).pow(2)
+                        var bmi = bmiCalculate(
+                            weight = weightState.value.toDouble(),
+                            height = heightState.value.toDouble()
+                        )
                         bmiState.value = bmi.toString()
+                        bmiClassificationState.value =
+                            getBmiClassification(bmi, context)
                     },
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(Color(100, 190, 100))
+                    colors = ButtonDefaults.buttonColors(Color(48, 48, 48, 255))
                 ) {
                     Text(
                         text = stringResource(id = R.string.button_text),
@@ -159,11 +172,12 @@ fun CalculatorScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(270.dp),
-                    color = Color(
-                        148,
-                        0,
-                        211
-                    ),
+                    color = if(bmiState.value.isEmpty()) Color(
+                        33,
+                        150,
+                        243,
+                        255
+                    ) else getBmiClassificationColor(bmiState.value.toDouble()),
                     shape = RoundedCornerShape(
                         topStart = 32.dp,
                         topEnd = 23.dp
@@ -183,7 +197,8 @@ fun CalculatorScreen() {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = bmiState.value,
+                            text =  String.format("%.2f", if(bmiState.value.isEmpty()) 0.00
+                                    else bmiState.value.toDouble()),
                             textAlign = TextAlign.Center,
                             color = Color.White,
                             fontSize = 40.sp,
@@ -191,7 +206,7 @@ fun CalculatorScreen() {
 
                         )
                         Text(
-                            text = stringResource(id = R.string.ideal),
+                            text = bmiClassificationState.value,
                             textAlign = TextAlign.Center,
                             color = Color.White,
                             fontSize = 18.sp
